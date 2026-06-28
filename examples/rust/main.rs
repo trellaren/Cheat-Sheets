@@ -73,7 +73,8 @@ struct BankAccount {
 
 impl BankAccount {
     // Constructor-style associated function (class constructor equivalent).
-    // Negative opening balances are clamped to 0 to keep this demo simple.
+    // Negative opening balances are clamped to 0 because this beginner demo
+    // focuses on state transitions without introducing constructor error flows.
     fn new(owner: &str, opening_balance: i64) -> Self {
         Self {
             owner: owner.to_string(),
@@ -196,7 +197,8 @@ fn library_examples() -> Result<String, std::io::Error> {
     println!("\n== Library Usage (std) ==");
 
     let started = Instant::now();
-    let demo_path: PathBuf = std::env::temp_dir().join("rust-cheat-sheets-library-demo.txt");
+    let file_name = format!("rust-cheat-sheets-library-demo-{}.txt", std::process::id());
+    let demo_path: PathBuf = std::env::temp_dir().join(file_name);
 
     fs::write(&demo_path, "rust libraries demo line")?;
     let content = fs::read_to_string(&demo_path)?;
@@ -344,7 +346,7 @@ impl TaskApp {
     fn list_open_tasks(&self) -> Vec<Task> {
         self.tasks
             .iter()
-            .filter(|task| !task.completed)
+            .filter(|item| !item.completed)
             .cloned()
             .collect()
     }
