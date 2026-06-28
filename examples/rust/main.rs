@@ -170,7 +170,7 @@ fn word_frequencies(text: &str) -> HashMap<String, usize> {
     let mut counts = HashMap::new();
     for word in text.split_whitespace() {
         let cleaned = word
-            .trim_matches(|c: char| !c.is_alphanumeric())
+            .trim_matches(|character: char| !character.is_alphanumeric())
             .to_ascii_lowercase();
         if !cleaned.is_empty() {
             *counts.entry(cleaned).or_insert(0) += 1;
@@ -200,10 +200,11 @@ fn library_examples() -> Result<String, std::io::Error> {
     fs::write(&demo_path, "rust libraries demo line")?;
     let content = fs::read_to_string(&demo_path)?;
     let elapsed: Duration = started.elapsed();
+    let elapsed_us = elapsed.as_micros();
 
     println!("file path: {:?}", demo_path);
     println!("file content: {content}");
-    println!("elapsed: {:?}µs", elapsed.as_micros());
+    println!("elapsed: {} µs", elapsed_us);
 
     // Best-effort cleanup for a temporary file.
     let _ = fs::remove_file(demo_path);
