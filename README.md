@@ -23,5 +23,8 @@ LLM generated cheat sheets.
 19. [Typescript](./Typescript.md)  (openai/gpt-oss-20b)
 20. [Unreal C++](./UnrealCPP.md)  (openai/gpt-oss-20b)
 21. [YAML](./yaml.md) (google/gemma-4-e4b)
+22. [Go Examples](./examples/go/main.go)
+23. [Python Examples](./examples/python/main.py)
+24. [Rust Examples](./examples/rust/main.rs)
 
 I just used LM Studio and locally run models to generate these cheat sheets, feel free to take and use them for your own purposes.
