@@ -72,9 +72,9 @@ struct BankAccount {
 }
 
 impl BankAccount {
-    // Constructor-style associated function (class constructor equivalent).
-    // Negative opening balances are clamped to 0 because this beginner demo
-    // focuses on state transitions without introducing constructor error flows.
+    /// Constructor-style associated function (class constructor equivalent).
+    /// Negative opening balances are clamped to 0 because this beginner demo
+    /// focuses on state transitions without introducing constructor error flows.
     fn new(owner: &str, opening_balance: i64) -> Self {
         Self {
             owner: owner.to_string(),
@@ -142,7 +142,10 @@ fn oop_style_examples() {
 
     let mut account = BankAccount::new("Ada", 1_000);
     account.deposit(250);
-    let _ = account.withdraw(100);
+    match account.withdraw(100) {
+        Ok(remaining) => println!("withdraw successful, remaining: {remaining}"),
+        Err(error) => println!("withdraw failed: {error}"),
+    }
 
     let plain_email = EmailNotifier {
         address: "ada@example.com".to_string(),
@@ -399,7 +402,10 @@ fn main() {
     oop_style_examples();
 
     println!("\n== Intermediate Helpers ==");
-    println!("parsed numbers: {:?}", parse_numbers(&["10", "20", "30"]));
+    match parse_numbers(&["10", "20", "30"]) {
+        Ok(parsed) => println!("parsed numbers: {:?}", parsed),
+        Err(error) => eprintln!("parse failed: {error}"),
+    }
     println!(
         "word frequencies: {:?}",
         word_frequencies("Rust makes systems programming safer and Rust stays fast.")
