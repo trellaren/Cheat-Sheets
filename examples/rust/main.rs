@@ -1,72 +1,166 @@
 use std::collections::HashMap;
+use std::fs;
 use std::num::ParseIntError;
+use std::path::PathBuf;
 use std::sync::mpsc;
 use std::thread;
+use std::time::{Duration, Instant};
+
+// ============================================================
+// BASIC DATA TYPES EXAMPLES
+// ============================================================
+// This section intentionally shows many Rust data types in one place.
+// Think of this as the "quick type tour" for a beginner.
+fn data_type_examples() -> (i32, f64, bool, char, usize) {
+    // Integer type (signed, 32-bit)
+    let integer_value: i32 = 42;
+
+    // Float type (64-bit floating point)
+    let float_value: f64 = 3.1415;
+
+    // Boolean
+    let feature_enabled: bool = true;
+
+    // Character (Unicode scalar value)
+    let language_marker: char = '🦀';
+
+    // Tuple combines multiple different types
+    let status_tuple: (&str, u8) = ("ready", 1);
+
+    // Array has fixed size known at compile time
+    let retry_codes: [u16; 3] = [200, 201, 500];
+
+    // Vector is growable and heap allocated
+    let mut tools: Vec<&str> = vec!["cargo", "rustfmt"];
+    tools.push("clippy");
+
+    // HashMap is the standard key-value map in Rust stdlib
+    let mut counts: HashMap<&str, usize> = HashMap::new();
+    counts.insert("tools", tools.len());
+
+    println!("== Data Types ==");
+    println!("integer: {integer_value}");
+    println!("float: {float_value}");
+    println!("bool: {feature_enabled}");
+    println!("char: {language_marker}");
+    println!("tuple: {:?}", status_tuple);
+    println!("array: {:?}", retry_codes);
+    println!("vector: {:?}", tools);
+    println!("hash map: {:?}", counts);
+
+    (
+        integer_value,
+        float_value,
+        feature_enabled,
+        language_marker,
+        tools.len(),
+    )
+}
+
+// ============================================================
+// OBJECT ORIENTED STYLE EXAMPLES (class-like, inheritance-like)
+// ============================================================
+// Rust does not have "class" and "inheritance" in the same way as Java/C#.
+// Instead, Rust uses structs + impl blocks + traits + composition.
+// This section demonstrates how to model OOP ideas idiomatically.
 
 #[derive(Debug, Clone)]
-struct User {
-    name: String,
-    age: u32,
+struct BankAccount {
+    owner: String,
+    // Private field: only methods on BankAccount can directly modify this.
+    balance: i64,
 }
 
-impl User {
-    fn greet(&self) -> String {
-        format!("Hi, I'm {}", self.name)
+impl BankAccount {
+    // Constructor-style associated function (class constructor equivalent).
+    fn new(owner: &str, opening_balance: i64) -> Self {
+        Self {
+            owner: owner.to_string(),
+            balance: opening_balance.max(0),
+        }
     }
 
-    fn years_until(&self, target_age: u32) -> u32 {
-        target_age.saturating_sub(self.age)
+    // "Getter" style API.
+    fn balance(&self) -> i64 {
+        self.balance
+    }
+
+    // Encapsulated mutation method.
+    fn deposit(&mut self, amount: i64) {
+        if amount > 0 {
+            self.balance += amount;
+        }
+    }
+
+    // Safe withdrawal that uses Result for error handling.
+    fn withdraw(&mut self, amount: i64) -> Result<i64, &'static str> {
+        if amount <= 0 {
+            return Err("amount must be positive");
+        }
+        if self.balance < amount {
+            return Err("insufficient funds");
+        }
+        self.balance -= amount;
+        Ok(self.balance)
     }
 }
 
-trait Summary {
-    fn summary(&self) -> String;
+// Trait behaves similarly to an interface/base contract.
+trait Notifier {
+    fn send(&self, message: &str) -> String;
 }
 
 #[derive(Debug)]
-struct ScoreReport {
-    user: User,
-    scores: Vec<u32>,
+struct EmailNotifier {
+    address: String,
 }
 
-impl ScoreReport {
-    fn average(&self) -> Option<f64> {
-        if self.scores.is_empty() {
-            return None;
-        }
-
-        let total: u32 = self.scores.iter().sum();
-        Some(total as f64 / self.scores.len() as f64)
-    }
-
-    fn passing_scores(&self) -> Vec<u32> {
-        self.scores
-            .iter()
-            .copied()
-            .filter(|score| *score >= 70)
-            .collect()
+impl Notifier for EmailNotifier {
+    fn send(&self, message: &str) -> String {
+        format!("Email to {}: {}", self.address, message)
     }
 }
 
-impl Summary for ScoreReport {
-    fn summary(&self) -> String {
-        let average = self.average().unwrap_or_default();
-        format!(
-            "{} has an average score of {:.1} and passing scores {:?}",
-            self.user.name,
-            average,
-            self.passing_scores()
-        )
+// Composition: "inherits behavior" by holding another struct and delegating.
+#[derive(Debug)]
+struct AuditedNotifier {
+    inner: EmailNotifier,
+    audit_tag: String,
+}
+
+impl Notifier for AuditedNotifier {
+    fn send(&self, message: &str) -> String {
+        let original = self.inner.send(message);
+        format!("[{}] {}", self.audit_tag, original)
     }
 }
 
-fn divide(a: f64, b: f64) -> Result<f64, &'static str> {
-    if b == 0.0 {
-        return Err("division by zero");
-    }
+fn oop_style_examples() {
+    println!("\n== Object-Oriented Style Rust ==");
 
-    Ok(a / b)
+    let mut account = BankAccount::new("Ada", 1_000);
+    account.deposit(250);
+    let _ = account.withdraw(100);
+
+    let plain_email = EmailNotifier {
+        address: "ada@example.com".to_string(),
+    };
+    let audited_email = AuditedNotifier {
+        inner: EmailNotifier {
+            address: "ops@example.com".to_string(),
+        },
+        audit_tag: "SECURITY-AUDIT".to_string(),
+    };
+
+    println!("account owner: {}", account.owner);
+    println!("account balance: {}", account.balance());
+    println!("{}", plain_email.send("Balance updated"));
+    println!("{}", audited_email.send("Suspicious login check"));
 }
+
+// ============================================================
+// LIBRARIES + APPLICATION SUPPORT HELPERS
+// ============================================================
 
 fn parse_numbers(values: &[&str]) -> Result<Vec<i32>, ParseIntError> {
     values.iter().map(|value| value.parse::<i32>()).collect()
@@ -74,17 +168,14 @@ fn parse_numbers(values: &[&str]) -> Result<Vec<i32>, ParseIntError> {
 
 fn word_frequencies(text: &str) -> HashMap<String, usize> {
     let mut counts = HashMap::new();
-
     for word in text.split_whitespace() {
         let cleaned = word
-            .trim_matches(|character: char| !character.is_alphanumeric())
+            .trim_matches(|c: char| !c.is_alphanumeric())
             .to_ascii_lowercase();
-
         if !cleaned.is_empty() {
             *counts.entry(cleaned).or_insert(0) += 1;
         }
     }
-
     counts
 }
 
@@ -96,65 +187,197 @@ fn longest<'a>(left: &'a str, right: &'a str) -> &'a str {
     }
 }
 
+// Shows std library usage:
+// - std::fs for file I/O
+// - std::time for duration measurement
+// - std::path for path handling
+fn library_examples() -> Result<String, std::io::Error> {
+    println!("\n== Library Usage (std) ==");
+
+    let started = Instant::now();
+    let demo_path: PathBuf = "/tmp/rust-cheat-sheets-library-demo.txt".into();
+
+    fs::write(&demo_path, "rust libraries demo line")?;
+    let content = fs::read_to_string(&demo_path)?;
+    let elapsed: Duration = started.elapsed();
+
+    println!("file path: {:?}", demo_path);
+    println!("file content: {content}");
+    println!("elapsed: {:?}µs", elapsed.as_micros());
+
+    // Best-effort cleanup for a temporary file.
+    let _ = fs::remove_file(demo_path);
+    Ok(content)
+}
+
+// ============================================================
+// DATABASE CONNECTION EXAMPLES (mock + realistic comments)
+// ============================================================
+// We keep this file standalone (no Cargo.toml), so this uses a mock DB client.
+// In a full app, you would usually use:
+// - sqlx for async pooling + compile-time query checks
+// - diesel for ORM style
+// - rusqlite for SQLite
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct DbUser {
+    id: u32,
+    name: String,
+}
+
+trait DatabaseClient {
+    fn connect(&mut self) -> Result<(), String>;
+    fn insert_user(&mut self, name: &str) -> Result<DbUser, String>;
+    fn list_users(&self) -> Result<Vec<DbUser>, String>;
+    fn disconnect(&mut self);
+}
+
+#[derive(Debug)]
+struct MockDatabase {
+    connected: bool,
+    next_id: u32,
+    users: Vec<DbUser>,
+}
+
+impl MockDatabase {
+    fn new() -> Self {
+        Self {
+            connected: false,
+            next_id: 1,
+            users: vec![],
+        }
+    }
+}
+
+impl DatabaseClient for MockDatabase {
+    fn connect(&mut self) -> Result<(), String> {
+        self.connected = true;
+        Ok(())
+    }
+
+    fn insert_user(&mut self, name: &str) -> Result<DbUser, String> {
+        if !self.connected {
+            return Err("database is not connected".to_string());
+        }
+        let record = DbUser {
+            id: self.next_id,
+            name: name.to_string(),
+        };
+        self.next_id += 1;
+        self.users.push(record.clone());
+        Ok(record)
+    }
+
+    fn list_users(&self) -> Result<Vec<DbUser>, String> {
+        if !self.connected {
+            return Err("database is not connected".to_string());
+        }
+        Ok(self.users.clone())
+    }
+
+    fn disconnect(&mut self) {
+        self.connected = false;
+    }
+}
+
+fn database_examples() -> Result<Vec<DbUser>, String> {
+    println!("\n== Database Connection Example ==");
+
+    let mut db = MockDatabase::new();
+    db.connect()?;
+    let _ = db.insert_user("Ada")?;
+    let _ = db.insert_user("Lin")?;
+
+    let users = db.list_users()?;
+    println!("users in mock database: {:?}", users);
+
+    db.disconnect();
+    Ok(users)
+}
+
+// ============================================================
+// APPLICATION EXAMPLE (small CLI-style todo app)
+// ============================================================
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Task {
+    id: u32,
+    title: String,
+    completed: bool,
+}
+
+#[derive(Debug, Default)]
+struct TaskApp {
+    next_id: u32,
+    tasks: Vec<Task>,
+}
+
+impl TaskApp {
+    fn new() -> Self {
+        Self {
+            next_id: 1,
+            tasks: vec![],
+        }
+    }
+
+    fn add_task(&mut self, title: &str) -> Task {
+        let task = Task {
+            id: self.next_id,
+            title: title.to_string(),
+            completed: false,
+        };
+        self.next_id += 1;
+        self.tasks.push(task.clone());
+        task
+    }
+
+    fn complete_task(&mut self, id: u32) -> bool {
+        if let Some(task) = self.tasks.iter_mut().find(|task| task.id == id) {
+            task.completed = true;
+            return true;
+        }
+        false
+    }
+
+    fn list_open_tasks(&self) -> Vec<Task> {
+        self.tasks
+            .iter()
+            .filter(|task| !task.completed)
+            .cloned()
+            .collect()
+    }
+}
+
+fn application_examples() {
+    println!("\n== Application Example ==");
+
+    let mut app = TaskApp::new();
+    let first = app.add_task("Write Rust cheat sheet example");
+    let second = app.add_task("Add mock database flow");
+    let _ = app.complete_task(first.id);
+
+    println!("created tasks: {:?}, {:?}", first, second);
+    println!("open tasks: {:?}", app.list_open_tasks());
+}
+
+// ============================================================
+// ADVANCED EXAMPLE (threading + channels + lifetimes)
+// ============================================================
+
 fn square_in_parallel(numbers: Vec<i32>) -> Vec<i32> {
     let (tx, rx) = mpsc::channel();
-
     let worker = thread::spawn(move || {
         for number in numbers {
+            // Send each processed value from the worker thread.
             tx.send(number * number).unwrap();
         }
     });
 
+    // Collect all values after channel is closed when worker exits.
     let mut results: Vec<_> = rx.into_iter().collect();
     worker.join().unwrap();
     results.sort_unstable();
     results
-}
-
-fn print_summary(item: &impl Summary) {
-    println!("{}", item.summary());
-}
-
-fn basic_examples() {
-    println!("== Basic Rust ==");
-
-    let mut tools = vec!["cargo", "rustfmt"];
-    tools.push("clippy");
-
-    let user = User {
-        name: String::from("Ada"),
-        age: 27,
-    };
-
-    println!("{}", user.greet());
-    println!("Tools: {:?}", tools);
-    println!("Years until 30: {}", user.years_until(30));
-
-    match divide(10.0, 2.0) {
-        Ok(value) => println!("10 / 2 = {value}"),
-        Err(error) => println!("error: {error}"),
-    }
-}
-
-fn intermediate_examples() -> Result<(), ParseIntError> {
-    println!("\n== Intermediate Rust ==");
-
-    let parsed = parse_numbers(&["10", "20", "30"])?;
-    let report = ScoreReport {
-        user: User {
-            name: String::from("Lin"),
-            age: 31,
-        },
-        scores: vec![88, 91, 65, 99],
-    };
-    let frequencies =
-        word_frequencies("Rust makes systems programming feel safe and Rust stays fast.");
-
-    println!("Parsed numbers: {:?}", parsed);
-    print_summary(&report);
-    println!("Word frequencies: {:?}", frequencies);
-
-    Ok(())
 }
 
 fn advanced_examples() {
@@ -163,17 +386,32 @@ fn advanced_examples() {
     let longest_label = longest("ownership", "borrowing");
     let squares = square_in_parallel(vec![1, 2, 3, 4, 5]);
 
-    println!("Longest label: {longest_label}");
-    println!("Parallel squares: {:?}", squares);
+    println!("longest label: {longest_label}");
+    println!("parallel squares: {:?}", squares);
 }
 
 fn main() {
-    basic_examples();
+    let _ = data_type_examples();
+    oop_style_examples();
 
-    if let Err(error) = intermediate_examples() {
-        eprintln!("Intermediate examples failed: {error}");
+    println!("\n== Intermediate Helpers ==");
+    println!("parsed numbers: {:?}", parse_numbers(&["10", "20", "30"]));
+    println!(
+        "word frequencies: {:?}",
+        word_frequencies("Rust makes systems programming safer and Rust stays fast.")
+    );
+
+    match library_examples() {
+        Ok(content) => println!("library demo read back: {content}"),
+        Err(error) => eprintln!("library demo failed: {error}"),
     }
 
+    match database_examples() {
+        Ok(users) => println!("database demo users: {}", users.len()),
+        Err(error) => eprintln!("database demo failed: {error}"),
+    }
+
+    application_examples();
     advanced_examples();
 }
 
@@ -182,8 +420,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn divide_rejects_zero() {
-        assert_eq!(divide(10.0, 0.0), Err("division by zero"));
+    fn data_type_examples_returns_expected_shapes() {
+        let result = data_type_examples();
+        assert_eq!(result.0, 42);
+        assert!(result.1 > 3.0);
+        assert!(result.2);
+        assert_eq!(result.3, '🦀');
+        assert_eq!(result.4, 3);
+    }
+
+    #[test]
+    fn bank_account_withdraw_rejects_insufficient_funds() {
+        let mut account = BankAccount::new("Pat", 100);
+        assert_eq!(account.withdraw(200), Err("insufficient funds"));
     }
 
     #[test]
@@ -194,33 +443,33 @@ mod tests {
     #[test]
     fn word_frequencies_normalize_case_and_punctuation() {
         let counts = word_frequencies("Rust, rust! Borrow checker.");
-
         assert_eq!(counts.get("rust"), Some(&2));
         assert_eq!(counts.get("borrow"), Some(&1));
         assert_eq!(counts.get("checker"), Some(&1));
     }
 
     #[test]
-    fn longest_returns_longer_value() {
-        assert_eq!(longest("safe", "fearless"), "fearless");
+    fn mock_database_requires_connection() {
+        let mut db = MockDatabase::new();
+        assert!(db.insert_user("Ada").is_err());
+        db.connect().unwrap();
+        assert!(db.insert_user("Ada").is_ok());
+    }
+
+    #[test]
+    fn task_app_tracks_open_tasks() {
+        let mut app = TaskApp::new();
+        let task = app.add_task("Task A");
+        app.add_task("Task B");
+        assert!(app.complete_task(task.id));
+
+        let open = app.list_open_tasks();
+        assert_eq!(open.len(), 1);
+        assert_eq!(open[0].title, "Task B");
     }
 
     #[test]
     fn square_in_parallel_returns_sorted_squares() {
         assert_eq!(square_in_parallel(vec![5, 1, 3]), vec![1, 9, 25]);
-    }
-
-    #[test]
-    fn score_report_filters_passing_scores() {
-        let report = ScoreReport {
-            user: User {
-                name: String::from("Pat"),
-                age: 22,
-            },
-            scores: vec![50, 70, 90],
-        };
-
-        assert_eq!(report.passing_scores(), vec![70, 90]);
-        assert_eq!(report.average(), Some(70.0));
     }
 }
