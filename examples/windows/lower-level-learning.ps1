@@ -65,7 +65,7 @@ $catalog = @{
         )
         Quiz       = @(
             @{ Prompt = "Which keyword declares an immutable variable in Rust?"; Answers = @("let") }
-            @{ Prompt = "What enum is commonly used for fallible operations?"; Answers = @("result", "std::result", "std::result::result", "Result") }
+            @{ Prompt = "What enum is commonly used for fallible operations?"; Answers = @("Result", "std::result::Result") }
             @{ Prompt = "Which command-line compiler builds a single Rust file?"; Answers = @("rustc") }
         )
     }
@@ -84,7 +84,7 @@ $catalog = @{
         )
         Quiz       = @(
             @{ Prompt = "Which keyword starts a goroutine?"; Answers = @("go") }
-            @{ Prompt = "What builtin type is used for concurrent communication?"; Answers = @("channel", "chan") }
+            @{ Prompt = "What builtin type is used for concurrent communication?"; Answers = @("chan") }
             @{ Prompt = "Which command runs a Go file directly?"; Answers = @("go run") }
         )
     }
