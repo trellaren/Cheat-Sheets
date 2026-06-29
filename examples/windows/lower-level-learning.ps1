@@ -219,13 +219,13 @@ function Invoke-Quiz {
         $useExactMatch = $question.ContainsKey("Exact") -and $question.Exact
 
         if ($useExactMatch) {
-            $accepted = @($question.Answers)
-            $isCorrect = $accepted -contains $response
+            $acceptedExact = @($question.Answers)
+            $isCorrect = $acceptedExact -contains $response
         }
         else {
             $normalized = $response.ToLowerInvariant()
-            $accepted = @($question.Answers | ForEach-Object { $_.ToLowerInvariant() })
-            $isCorrect = $accepted -contains $normalized
+            $acceptedNormalized = @($question.Answers | ForEach-Object { $_.ToLowerInvariant() })
+            $isCorrect = $acceptedNormalized -contains $normalized
         }
 
         if ($isCorrect) {
@@ -256,14 +256,16 @@ function Invoke-Example {
     try {
         $buildArgs = $runSpec.BuildArgs
         & $runSpec.Tool @buildArgs
-        if ($LASTEXITCODE -eq 0 -and $runSpec.OutputPath) {
+        $buildExitCode = $LASTEXITCODE
+
+        if ($buildExitCode -ne 0) {
+            Write-Host "$($Info.Tool) exited with code $buildExitCode." -ForegroundColor Red
+        }
+        elseif ($runSpec.OutputPath) {
             & $runSpec.OutputPath
             if ($LASTEXITCODE -ne 0) {
                 Write-Host "$($Info.Name) example exited with code $LASTEXITCODE." -ForegroundColor Red
             }
-        }
-        elseif ($LASTEXITCODE -ne 0) {
-            Write-Host "$($Info.Tool) exited with code $LASTEXITCODE." -ForegroundColor Red
         }
     }
     catch {
