@@ -34,5 +34,8 @@ LLM generated cheat sheets.
 30. [Python Typer CLI Example](./examples/python/typer_cli.py)
 31. [Python argparse CLI Example](./examples/python/argparse_cli.py)
 32. [C++ Examples](./examples/cpp/main.cpp)
+33. [C Examples](./examples/c/main.c)
+34. [C Compiler Example](./examples/c/compiler/main.c)
+35. [C Embedded Example](./examples/c/embedded/main.c)
 
 I just used LM Studio and locally run models to generate these cheat sheets, feel free to take and use them for your own purposes.
