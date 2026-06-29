@@ -219,12 +219,12 @@ function Invoke-Quiz {
         $useExactMatch = $question.ContainsKey("Exact") -and $question.Exact
 
         if ($useExactMatch) {
-            $acceptedExact = @($question.Answers)
+            $acceptedExact = $question.Answers
             $isCorrect = $acceptedExact -contains $response
         }
         else {
             $normalized = $response.ToLowerInvariant()
-            $acceptedNormalized = @($question.Answers | ForEach-Object { $_.ToLowerInvariant() })
+            $acceptedNormalized = $question.Answers | ForEach-Object { $_.ToLowerInvariant() }
             $isCorrect = $acceptedNormalized -contains $normalized
         }
 
