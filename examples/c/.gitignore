@@ -1,0 +1,4 @@
+# Compiled C binaries (build artefacts – not committed)
+main
+compiler/compiler
+embedded/embedded
