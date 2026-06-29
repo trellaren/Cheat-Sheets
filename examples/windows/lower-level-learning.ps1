@@ -117,8 +117,15 @@ function Get-LanguageInfo {
 function New-TemporaryOutputPath {
     param([string]$Prefix)
 
-    $randomName = [System.IO.Path]::GetRandomFileName()
-    return Join-Path ([System.IO.Path]::GetTempPath()) ($Prefix + "-" + $randomName + $exeSuffix)
+    for ($attempt = 0; $attempt -lt 10; $attempt++) {
+        $randomName = [System.IO.Path]::GetRandomFileName()
+        $candidate = Join-Path ([System.IO.Path]::GetTempPath()) ($Prefix + "-" + $randomName + $exeSuffix)
+        if (-not (Test-Path $candidate)) {
+            return $candidate
+        }
+    }
+
+    throw "Unable to create a unique temporary output path for $Prefix."
 }
 
 function Get-RunSpec {
@@ -237,7 +244,8 @@ function Invoke-Example {
     $runSpec = Get-RunSpec -Name $Info.Name -ExamplePath $Info.Example
 
     try {
-        & $runSpec.Tool @($runSpec.BuildArgs)
+        $buildArgs = $runSpec.BuildArgs
+        & $runSpec.Tool @buildArgs
         if ($LASTEXITCODE -eq 0 -and $runSpec.OutputPath) {
             & $runSpec.OutputPath
             if ($LASTEXITCODE -ne 0) {
@@ -253,7 +261,12 @@ function Invoke-Example {
     }
     finally {
         if ($runSpec.OutputPath -and (Test-Path $runSpec.OutputPath)) {
-            Remove-Item $runSpec.OutputPath -Force -ErrorAction SilentlyContinue
+            try {
+                Remove-Item $runSpec.OutputPath -Force -ErrorAction Stop
+            }
+            catch {
+                Write-Warning "Could not remove temporary output '$($runSpec.OutputPath)': $($_.Exception.Message)"
+            }
         }
     }
 }
