@@ -114,6 +114,13 @@ function Get-LanguageInfo {
     }
 }
 
+function New-TemporaryOutputPath {
+    param([string]$Prefix)
+
+    $randomName = [System.IO.Path]::GetRandomFileName()
+    return Join-Path ([System.IO.Path]::GetTempPath()) ($Prefix + "-" + $randomName + $exeSuffix)
+}
+
 function Get-RunSpec {
     param(
         [string]$Name,
@@ -122,7 +129,7 @@ function Get-RunSpec {
 
     switch ($Name) {
         "C" {
-            $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) ("c-learning" + $exeSuffix)
+            $outputPath = New-TemporaryOutputPath -Prefix "c-learning"
             return @{
                 Tool       = "gcc"
                 OutputPath = $outputPath
@@ -131,7 +138,7 @@ function Get-RunSpec {
             }
         }
         "C++" {
-            $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) ("cpp-learning" + $exeSuffix)
+            $outputPath = New-TemporaryOutputPath -Prefix "cpp-learning"
             return @{
                 Tool       = "g++"
                 OutputPath = $outputPath
@@ -140,7 +147,7 @@ function Get-RunSpec {
             }
         }
         "Rust" {
-            $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) ("rust-learning" + $exeSuffix)
+            $outputPath = New-TemporaryOutputPath -Prefix "rust-learning"
             return @{
                 Tool       = "rustc"
                 OutputPath = $outputPath
