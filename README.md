@@ -26,5 +26,12 @@ LLM generated cheat sheets.
 22. [Go Examples](./examples/go/main.go)
 23. [Python Examples](./examples/python/main.py)
 24. [Rust Examples](./examples/rust/main.rs)
+25. [Go CLI Example](./examples/go/cli/main.go)
+26. [Go API Example](./examples/go/api/main.go)
+27. [Python Flask API Example](./examples/python/flask_api.py)
+28. [Python FastAPI Example](./examples/python/fastapi_api.py)
+29. [Python Click CLI Example](./examples/python/click_cli.py)
+30. [Python Typer CLI Example](./examples/python/typer_cli.py)
+31. [Python argparse CLI Example](./examples/python/argparse_cli.py)
 
 I just used LM Studio and locally run models to generate these cheat sheets, feel free to take and use them for your own purposes.
