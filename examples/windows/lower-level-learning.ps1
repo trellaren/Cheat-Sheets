@@ -26,7 +26,7 @@ $catalog = @{
             "Build a linked list and free every node safely."
         )
         Quiz       = @(
-            @{ Prompt = "What header provides malloc and free?"; Answers = @("stdlib.h", "<stdlib.h>") }
+            @{ Prompt = "What header provides malloc and free?"; Answers = @("<stdlib.h>") }
             @{ Prompt = "Which operator dereferences a pointer?"; Answers = @("*") }
             @{ Prompt = "Which compiler flag enables the C11 standard with gcc?"; Answers = @("-std=c11") }
         )
@@ -46,7 +46,7 @@ $catalog = @{
         )
         Quiz       = @(
             @{ Prompt = "Which smart pointer has exclusive ownership?"; Answers = @("unique_ptr", "std::unique_ptr") }
-            @{ Prompt = "Which header contains std::vector?"; Answers = @("vector", "<vector>") }
+            @{ Prompt = "Which header contains std::vector?"; Answers = @("<vector>") }
             @{ Prompt = "Which compiler flag enables the C++20 standard with g++?"; Answers = @("-std=c++20") }
         )
     }
@@ -233,6 +233,9 @@ function Invoke-Example {
         & $runSpec.Tool @($runSpec.BuildArgs)
         if ($LASTEXITCODE -eq 0 -and $runSpec.OutputPath) {
             & $runSpec.OutputPath
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "$($Info.Name) example exited with code $LASTEXITCODE." -ForegroundColor Red
+            }
         }
         elseif ($LASTEXITCODE -ne 0) {
             Write-Host "$($Info.Tool) exited with code $LASTEXITCODE." -ForegroundColor Red
