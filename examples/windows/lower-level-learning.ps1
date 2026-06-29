@@ -65,7 +65,7 @@ $catalog = @{
         )
         Quiz       = @(
             @{ Prompt = "Which keyword declares an immutable variable in Rust?"; Answers = @("let") }
-            @{ Prompt = "What enum is commonly used for fallible operations?"; Answers = @("Result", "std::result::Result") }
+            @{ Prompt = "What enum is commonly used for fallible operations?"; Answers = @("Result") }
             @{ Prompt = "Which command-line compiler builds a single Rust file?"; Answers = @("rustc") }
         )
     }
@@ -84,7 +84,7 @@ $catalog = @{
         )
         Quiz       = @(
             @{ Prompt = "Which keyword starts a goroutine?"; Answers = @("go") }
-            @{ Prompt = "What builtin type is used for concurrent communication?"; Answers = @("chan") }
+            @{ Prompt = "What keyword introduces a channel type for concurrent communication?"; Answers = @("chan") }
             @{ Prompt = "Which command runs a Go file directly?"; Answers = @("go run") }
         )
     }
@@ -234,6 +234,12 @@ function Invoke-Example {
         if ($LASTEXITCODE -eq 0 -and $runSpec.OutputPath) {
             & $runSpec.OutputPath
         }
+        elseif ($LASTEXITCODE -ne 0) {
+            Write-Host "$($Info.Tool) exited with code $LASTEXITCODE." -ForegroundColor Red
+        }
+    }
+    catch {
+        Write-Host ("Failed to run {0}: {1}" -f $Info.Name, $_.Exception.Message) -ForegroundColor Red
     }
     finally {
         if ($runSpec.OutputPath -and (Test-Path $runSpec.OutputPath)) {
