@@ -37,5 +37,20 @@ LLM generated cheat sheets.
 33. [C Examples](./examples/c/main.c)
 34. [C Compiler Example](./examples/c/compiler/main.c)
 35. [C Embedded Example](./examples/c/embedded/main.c)
+36. [Windows Lower-Level Learning Utility](./examples/windows/lower-level-learning.ps1)
 
 I just used LM Studio and locally run models to generate these cheat sheets, feel free to take and use them for your own purposes.
+
+### Windows utility
+
+Run the interactive PowerShell utility to study C, C++, Rust, and Go on Windows:
+
+```powershell
+pwsh -ExecutionPolicy Bypass -File .\examples\windows\lower-level-learning.ps1
+```
+
+You can also jump directly to a language/action for quick practice:
+
+```powershell
+pwsh -ExecutionPolicy Bypass -File .\examples\windows\lower-level-learning.ps1 -Language Rust -Action Overview
+```
