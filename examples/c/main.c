@@ -622,7 +622,7 @@ void stdlib_examples(void) {
     // ---- <stdlib.h> conversions ----
     int    i  = atoi("42");
     double d  = atof("3.14");
-    printf("atoi=\"%d\"  atof=\"%.2f\"\n", i, (float)d);
+    printf("atoi=\"%d\"  atof=\"%.2f\"\n", i, d);
 
     // ---- <stdlib.h> qsort ----
     // qsort needs a comparator: returns <0, 0, or >0.
