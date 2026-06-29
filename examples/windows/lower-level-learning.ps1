@@ -100,29 +100,7 @@ function Get-LanguageInfo {
     $entry = $catalog[$Name]
     $cheatSheetPath = Join-Path $repoRoot $entry.CheatSheet
     $examplePath = Join-Path $repoRoot $entry.Example
-
-    switch ($Name) {
-        "C" {
-            $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) ("c-learning" + $exeSuffix)
-            $command = "gcc -std=c11 -Wall -Wextra -pedantic `"$examplePath`" -o `"$outputPath`" && `"$outputPath`""
-            $tool = "gcc"
-        }
-        "C++" {
-            $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) ("cpp-learning" + $exeSuffix)
-            $command = "g++ -std=c++20 -Wall -Wextra -pedantic `"$examplePath`" -o `"$outputPath`" && `"$outputPath`""
-            $tool = "g++"
-        }
-        "Rust" {
-            $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) ("rust-learning" + $exeSuffix)
-            $command = "rustc `"$examplePath`" -o `"$outputPath`" && `"$outputPath`""
-            $tool = "rustc"
-        }
-        "Go" {
-            $outputPath = $null
-            $command = "go run `"$examplePath`""
-            $tool = "go"
-        }
-    }
+    $runSpec = Get-RunSpec -Name $Name -ExamplePath $examplePath
 
     return @{
         Name       = $Name
@@ -131,9 +109,56 @@ function Get-LanguageInfo {
         Topics     = $entry.Topics
         Practice   = $entry.Practice
         Quiz       = $entry.Quiz
-        Command    = $command
-        Tool       = $tool
+        Command    = $runSpec.Command
+        Tool       = $runSpec.Tool
     }
+}
+
+function Get-RunSpec {
+    param(
+        [string]$Name,
+        [string]$ExamplePath
+    )
+
+    switch ($Name) {
+        "C" {
+            $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) ("c-learning" + $exeSuffix)
+            return @{
+                Tool       = "gcc"
+                OutputPath = $outputPath
+                BuildArgs  = @("-std=c11", "-Wall", "-Wextra", "-pedantic", $ExamplePath, "-o", $outputPath)
+                Command    = "gcc -std=c11 -Wall -Wextra -pedantic `"$ExamplePath`" -o `"$outputPath`" && `"$outputPath`""
+            }
+        }
+        "C++" {
+            $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) ("cpp-learning" + $exeSuffix)
+            return @{
+                Tool       = "g++"
+                OutputPath = $outputPath
+                BuildArgs  = @("-std=c++20", "-Wall", "-Wextra", "-pedantic", $ExamplePath, "-o", $outputPath)
+                Command    = "g++ -std=c++20 -Wall -Wextra -pedantic `"$ExamplePath`" -o `"$outputPath`" && `"$outputPath`""
+            }
+        }
+        "Rust" {
+            $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) ("rust-learning" + $exeSuffix)
+            return @{
+                Tool       = "rustc"
+                OutputPath = $outputPath
+                BuildArgs  = @($ExamplePath, "-o", $outputPath)
+                Command    = "rustc `"$ExamplePath`" -o `"$outputPath`" && `"$outputPath`""
+            }
+        }
+        "Go" {
+            return @{
+                Tool       = "go"
+                OutputPath = $null
+                BuildArgs  = @("run", $ExamplePath)
+                Command    = "go run `"$ExamplePath`""
+            }
+        }
+    }
+
+    throw "Unsupported language: $Name"
 }
 
 function Show-Overview {
@@ -202,24 +227,17 @@ function Invoke-Example {
         return
     }
 
-    switch ($Info.Name) {
-        "C" {
-            $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) ("c-learning" + $exeSuffix)
-            & gcc -std=c11 -Wall -Wextra -pedantic $Info.Example -o $outputPath
-            if ($LASTEXITCODE -eq 0) { & $outputPath }
+    $runSpec = Get-RunSpec -Name $Info.Name -ExamplePath $Info.Example
+
+    try {
+        & $runSpec.Tool @($runSpec.BuildArgs)
+        if ($LASTEXITCODE -eq 0 -and $runSpec.OutputPath) {
+            & $runSpec.OutputPath
         }
-        "C++" {
-            $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) ("cpp-learning" + $exeSuffix)
-            & g++ -std=c++20 -Wall -Wextra -pedantic $Info.Example -o $outputPath
-            if ($LASTEXITCODE -eq 0) { & $outputPath }
-        }
-        "Rust" {
-            $outputPath = Join-Path ([System.IO.Path]::GetTempPath()) ("rust-learning" + $exeSuffix)
-            & rustc $Info.Example -o $outputPath
-            if ($LASTEXITCODE -eq 0) { & $outputPath }
-        }
-        "Go" {
-            & go run $Info.Example
+    }
+    finally {
+        if ($runSpec.OutputPath -and (Test-Path $runSpec.OutputPath)) {
+            Remove-Item $runSpec.OutputPath -Force -ErrorAction SilentlyContinue
         }
     }
 }
