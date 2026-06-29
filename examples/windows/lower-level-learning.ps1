@@ -26,9 +26,9 @@ $catalog = @{
             "Build a linked list and free every node safely."
         )
         Quiz       = @(
-            @{ Prompt = "What header provides malloc and free?"; Answers = @("<stdlib.h>") }
+            @{ Prompt = "What header provides malloc and free?"; Answers = @("<stdlib.h>"); Exact = $true }
             @{ Prompt = "Which operator dereferences a pointer?"; Answers = @("*") }
-            @{ Prompt = "Which compiler flag enables the C11 standard with gcc?"; Answers = @("-std=c11") }
+            @{ Prompt = "Which compiler flag enables the C11 standard with gcc?"; Answers = @("-std=c11"); Exact = $true }
         )
     }
     "C++" = @{
@@ -46,8 +46,8 @@ $catalog = @{
         )
         Quiz       = @(
             @{ Prompt = "Which smart pointer has exclusive ownership?"; Answers = @("unique_ptr", "std::unique_ptr") }
-            @{ Prompt = "Which header contains std::vector?"; Answers = @("<vector>") }
-            @{ Prompt = "Which compiler flag enables the C++20 standard with g++?"; Answers = @("-std=c++20") }
+            @{ Prompt = "Which header contains std::vector?"; Answers = @("<vector>"); Exact = $true }
+            @{ Prompt = "Which compiler flag enables the C++20 standard with g++?"; Answers = @("-std=c++20"); Exact = $true }
         )
     }
     "Rust" = @{
@@ -85,7 +85,7 @@ $catalog = @{
         Quiz       = @(
             @{ Prompt = "Which keyword starts a goroutine?"; Answers = @("go") }
             @{ Prompt = "What keyword introduces a channel type for concurrent communication?"; Answers = @("chan") }
-            @{ Prompt = "Which command runs a Go file directly?"; Answers = @("go run") }
+            @{ Prompt = "Which command runs a Go file directly?"; Answers = @("go run"); Exact = $true }
         )
     }
 }
@@ -109,6 +109,7 @@ function Get-LanguageInfo {
         Topics     = $entry.Topics
         Practice   = $entry.Practice
         Quiz       = $entry.Quiz
+        RunSpec    = $runSpec
         Command    = $runSpec.Command
         Tool       = $runSpec.Tool
     }
@@ -215,10 +216,19 @@ function Invoke-Quiz {
 
     foreach ($question in $Info.Quiz) {
         $response = (Read-Host $question.Prompt).Trim()
-        $normalized = $response.ToLowerInvariant()
-        $accepted = @($question.Answers | ForEach-Object { $_.ToLowerInvariant() })
+        $useExactMatch = $question.ContainsKey("Exact") -and $question.Exact
 
-        if ($accepted -contains $normalized) {
+        if ($useExactMatch) {
+            $accepted = @($question.Answers)
+            $isCorrect = $accepted -contains $response
+        }
+        else {
+            $normalized = $response.ToLowerInvariant()
+            $accepted = @($question.Answers | ForEach-Object { $_.ToLowerInvariant() })
+            $isCorrect = $accepted -contains $normalized
+        }
+
+        if ($isCorrect) {
             Write-Host "Correct!" -ForegroundColor Green
             $score++
         }
@@ -241,7 +251,7 @@ function Invoke-Example {
         return
     }
 
-    $runSpec = Get-RunSpec -Name $Info.Name -ExamplePath $Info.Example
+    $runSpec = $Info.RunSpec
 
     try {
         $buildArgs = $runSpec.BuildArgs
